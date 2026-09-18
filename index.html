@@ -53,7 +53,8 @@ h1,h2,h3,.num{font-family:'Sora',sans-serif;margin:0}
 .ph{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
 .c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
 .cb{position:relative;width:100%}
-#map{height:500px;border-radius:12px;overflow:hidden;background:#E9EEF6}
+#map{height:500px;}
+.leaflet-popup-content-wrapper{border-radius:12px;box-shadow:0 8px 24px rgba(16,19,48,.18)}.leaflet-popup-content{margin:12px 14px}.dummy{border-radius:12px;overflow:hidden;background:#E9EEF6}
 .leg{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;margin-top:8px;color:var(--muted)}.leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
 .tw{overflow:auto;max-height:460px;border:1px solid var(--line);border-radius:12px}
 table{border-collapse:collapse;width:100%;font-size:12.5px}
@@ -286,9 +287,30 @@ function initMap(){if(!window.L||!window.L.map){document.getElementById('map').i
  let fell=false;esri.on('tileerror',()=>{if(fell)return;fell=true;MAP.removeLayer(esri);window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19,subdomains:'abc'}).addTo(MAP);});
  esri.addTo(MAP);LAYER=window.L.layerGroup().addTo(MAP);}
 try{initMap();}catch(e){}
+function popupHTML(r){const e=g(r,'est');const on=e===0;
+ const mk=[['Savital',g(r,'savP'),C.sav],['Dove',g(r,'dovP'),C.dove],['Sedal',g(r,'sedP'),C.sedal],['eGo',g(r,'egoP'),C.ego]];
+ const chips=mk.map(x=>'<span style="display:inline-block;font:700 10px Sora,sans-serif;color:#fff;background:'+(x[1]?x[2]:'#CBD2DE')+';border-radius:6px;padding:2px 7px;margin:2px 3px 0 0">'+x[0]+'</span>').join('');
+ const st=on?satSteps(r):[0,0,0,0];const sc=on?score(r):0;const scol=sc>=80?C.ok:sc>=60?C.warn:C.bad;
+ const pr=on?popRatio(r):{r:0};
+ const u=(v,t)=>v<0?'—':'<b style="color:'+(v>=t?C.ok:v>0?C.warn:C.bad)+'">'+v+'</b>/'+t;
+ let h='<div style="font-family:Inter,sans-serif;color:#0E1330">';
+ h+='<div style="font-family:Sora,sans-serif;font-weight:800;font-size:13.5px;margin-bottom:2px">'+g(r,'neg')+'</div>';
+ h+='<div style="font-size:11.5px;color:#5B6577;margin-bottom:6px">'+L.ciu[g(r,'ciu')]+' · '+L.ruta[g(r,'ruta')]+' · '+DIAS[g(r,'dia')]+'</div>';
+ h+='<span style="display:inline-block;font:700 10.5px Sora,sans-serif;color:#fff;background:'+EC[e]+';border-radius:999px;padding:2px 9px">'+ESTADOS[e]+(e===3&&g(r,'nov')>=0?' · '+NOV[g(r,'nov')]:'')+'</span>';
+ if(on){h+='<span style="float:right;font:800 13px Sora,sans-serif;color:#fff;background:'+scol+';border-radius:8px;padding:2px 9px">'+sc+'</span>';
+  h+='<div style="font-size:10.5px;color:#5B6577;margin:8px 0 1px;font-weight:700">MARCAS</div>'+chips;
+  h+='<div style="display:flex;gap:10px;margin-top:7px;font-size:11.5px">';
+  h+='<div style="flex:1"><div style="font-size:10.5px;color:#5B6577;font-weight:700">RUTINA</div>SDS+E '+(g(r,'rut')?'<b style=\"color:'+C.ok+'\">Completa</b>':'<b style=\"color:'+C.warn+'\">Parcial</b>')+'<br>SAT+1 '+st.reduce((a,b)=>a+b,0)+'/4</div>';
+  h+='<div style="flex:1"><div style="font-size:10.5px;color:#5B6577;font-weight:700">PERMISO</div>'+PERM[g(r,'perm')]+'<br>POP '+Math.round(pr.r*100)+'%</div>';
+  h+='</div>';
+  h+='<div style="font-size:10.5px;color:#5B6577;margin:8px 0 2px;font-weight:700">MATERIAL POP</div>';
+  h+='<div style="font-size:11px;line-height:1.6">Cenefas '+u(g(r,'cenU'),3)+' · Precios '+u(g(r,'preU'),3)+'<br>Af. bolsillo '+u(g(r,'aboU'),1)+' · Af. papel '+u(g(r,'apaU'),3)+' · Tabacón '+u(g(r,'tabU'),1)+'</div>';
+  const vv=g(r,'savV')+g(r,'dovV')+g(r,'sedV')+g(r,'egoV');h+='<div style="font-size:11px;color:#5B6577;margin-top:6px">Variedades totales: <b style="color:#0E1330">'+vv+'</b></div>';
+ }
+ return h+'</div>';}
 function updMap(rows){if(!MAP)return;LAYER.clearLayers();let pts=rows.filter(r=>g(r,'lat')!==null);const cap=4500;if(pts.length>cap){const st=Math.ceil(pts.length/cap);pts=pts.filter((_,i)=>i%st===0);}
  const b=[];pts.forEach(r=>{const e=g(r,'est');const m=window.L.circleMarker([g(r,'lat'),g(r,'lon')],{radius:e===4?5:4,color:'#fff',weight:.8,fillColor:EC[e],fillOpacity:.85});
-  m.bindPopup('<b>'+g(r,'neg')+'</b><br>'+L.ciu[g(r,'ciu')]+' · '+L.ruta[g(r,'ruta')]+'<br><span style="color:'+EC[e]+';font-weight:700">'+ESTADOS[e]+(e===3&&g(r,'nov')>=0?' · '+NOV[g(r,'nov')]:'')+'</span>'+(e===0?'<br>Score '+score(r):''));LAYER.addLayer(m);b.push([g(r,'lat'),g(r,'lon')]);});
+  m.bindPopup(popupHTML(r),{maxWidth:280,minWidth:240});LAYER.addLayer(m);b.push([g(r,'lat'),g(r,'lon')]);});
  if(b.length)MAP.fitBounds(b,{padding:[20,20],maxZoom:13});}
 function rutaAgg(rows){const A={};rows.forEach(r=>{const k=L.ruta[g(r,'ruta')];const o=A[k]||(A[k]={r:k,emp:L.emp[g(r,'emp')],cc:{},prog:0,vis:0,nv:0,nov:0,imp:0,pro:0,cen:0,pre:0,abo:0,apa:0,tab:0,tabT:0,pi:0,pt:0});
  const e=g(r,'est');const c=L.ciu[g(r,'ciu')];o.cc[c]=(o.cc[c]||0)+1;if(e===4){o.pro++;return;}o.prog++;if(e!==2)o.vis++;if(e===2)o.nv++;if(e===3)o.nov++;
